@@ -820,6 +820,488 @@ smStatus_t Se05x_API_WriteSymmKey(pSe05xSession_t session_ctx,
  */
 smStatus_t Se05x_API_DeleteSecureObject(pSe05xSession_t session_ctx, uint32_t objectID);
 
+/** Se05x_API_GetRandom
+ *
+ * Gets random data from the SE05X .
+ *
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +-------+------------+-----------------------------+
+ * | Field | Value      | Description                 |
+ * +=======+============+=============================+
+ * | CLA   | 0x80       |                             |
+ * +-------+------------+-----------------------------+
+ * | INS   | INS_MGMT   | See :cpp:type:`SE05x_INS_t` |
+ * +-------+------------+-----------------------------+
+ * | P1    | P1_DEFAULT | See :cpp:type:`SE05x_P1_t`  |
+ * +-------+------------+-----------------------------+
+ * | P2    | P2_RANDOM  | See :cpp:type:`SE05x_P2_t`  |
+ * +-------+------------+-----------------------------+
+ * | Lc    | #(Payload) |                             |
+ * +-------+------------+-----------------------------+
+ * |       | TLV[TAG_1] | 2-byte requested size.      |
+ * +-------+------------+-----------------------------+
+ * | Le    | 0x00       | Expecting random data       |
+ * +-------+------------+-----------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * @rst
+ * +------------+--------------+
+ * | Value      | Description  |
+ * +============+==============+
+ * | TLV[TAG_1] | Random data. |
+ * +------------+--------------+
+ * @endrst
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+--------------------------------+
+ * | SW          | Description                    |
+ * +=============+================================+
+ * | SW_NO_ERROR | Data is returned successfully. |
+ * +-------------+--------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in]  session_ctx     The session context
+ * @param[in]  size            The size
+ * @param      randomData      The random data
+ * @param      prandomDataLen  The prandom data length
+ *
+ * @return     The sm status.
+ */
+smStatus_t Se05x_API_GetRandom(pSe05xSession_t session_ctx, uint16_t size, uint8_t *randomData, size_t *prandomDataLen);
+
+/** Se05x_API_DigestInit
+ *
+ * Open a digest operation. The state of the digest operation is kept in the
+ * Crypto Object until the Crypto Object is finalized or deleted.
+ *
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +-------+------------+---------------------------------+
+ * | Field | Value      | Description                     |
+ * +=======+============+=================================+
+ * | CLA   | 0x80       |                                 |
+ * +-------+------------+---------------------------------+
+ * | INS   | INS_CRYPTO | See :cpp:type:`SE05x_INS_t`     |
+ * +-------+------------+---------------------------------+
+ * | P1    | P1_DEFAULT | See :cpp:type:`SE05x_P1_t`      |
+ * +-------+------------+---------------------------------+
+ * | P2    | P2_INIT    | See :cpp:type:`SE05x_P2_t`      |
+ * +-------+------------+---------------------------------+
+ * | Lc    | #(Payload) |                                 |
+ * +-------+------------+---------------------------------+
+ * |       | TLV[TAG_2] | 2-byte Crypto Object identifier |
+ * +-------+------------+---------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * NA
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+--------------------------------------+
+ * | SW          | Description                          |
+ * +=============+======================================+
+ * | SW_NO_ERROR | The command is handled successfully. |
+ * +-------------+--------------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] cryptoObjectID cryptoObjectID [1:kSE05x_TAG_2]
+ */
+smStatus_t Se05x_API_DigestInit(pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID);
+
+/** Se05x_API_DigestUpdate
+ *
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +-------+------------+---------------------------------+
+ * | Field | Value      | Description                     |
+ * +=======+============+=================================+
+ * | CLA   | 0x80       |                                 |
+ * +-------+------------+---------------------------------+
+ * | INS   | INS_CRYPTO | See :cpp:type:`SE05x_INS_t`     |
+ * +-------+------------+---------------------------------+
+ * | P1    | P1_DEFAULT | See :cpp:type:`SE05x_P1_t`      |
+ * +-------+------------+---------------------------------+
+ * | P2    | P2_UPDATE  | See :cpp:type:`SE05x_P2_t`      |
+ * +-------+------------+---------------------------------+
+ * | Lc    | #(Payload) |                                 |
+ * +-------+------------+---------------------------------+
+ * |       | TLV[TAG_2] | 2-byte Crypto Object identifier |
+ * +-------+------------+---------------------------------+
+ * |       | TLV[TAG_3] | Data to be hashed.              |
+ * +-------+------------+---------------------------------+
+ * | Le    |            |                                 |
+ * +-------+------------+---------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * NA
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+--------------------------------------+
+ * | SW          | Description                          |
+ * +=============+======================================+
+ * | SW_NO_ERROR | The command is handled successfully. |
+ * +-------------+--------------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] cryptoObjectID cryptoObjectID [1:kSE05x_TAG_2]
+ * @param[in] inputData inputData [2:kSE05x_TAG_3]
+ * @param[in] inputDataLen Length of inputData
+ */
+smStatus_t Se05x_API_DigestUpdate(
+    pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID, const uint8_t *inputData, size_t inputDataLen);
+
+/** Se05x_API_DigestFinal
+ *
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +-------+------------+------------------------------------+
+ * | Field | Value      | Description                        |
+ * +=======+============+====================================+
+ * | CLA   | 0x80       |                                    |
+ * +-------+------------+------------------------------------+
+ * | INS   | INS_CRYPTO | See :cpp:type:`SE05x_INS_t`        |
+ * +-------+------------+------------------------------------+
+ * | P1    | P1_DEFAULT | See :cpp:type:`SE05x_P1_t`         |
+ * +-------+------------+------------------------------------+
+ * | P2    | P2_FINAL   | See :cpp:type:`SE05x_P2_t`         |
+ * +-------+------------+------------------------------------+
+ * | Lc    | #(Payload) |                                    |
+ * +-------+------------+------------------------------------+
+ * |       | TLV[TAG_2] | 2-byte Crypto Object identifier    |
+ * +-------+------------+------------------------------------+
+ * |       | TLV[TAG_3] | Data to be encrypted or decrypted. |
+ * +-------+------------+------------------------------------+
+ * | Le    | 0x00       | Expecting TLV with hash value.     |
+ * +-------+------------+------------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * @rst
+ * +------------+-------------+
+ * | Value      | Description |
+ * +============+=============+
+ * | TLV[TAG_1] | CMAC value  |
+ * +------------+-------------+
+ * @endrst
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+-----------------------------------+
+ * | SW          | Description                       |
+ * +=============+===================================+
+ * | SW_NO_ERROR | The hash is created successfully. |
+ * +-------------+-----------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] cryptoObjectID cryptoObjectID [1:kSE05x_TAG_2]
+ * @param[in] inputData inputData [2:kSE05x_TAG_3]
+ * @param[in] inputDataLen Length of inputData
+ * @param[out] cmacValue  [0:kSE05x_TAG_1]
+ * @param[in,out] pcmacValueLen Length for cmacValue
+ */
+smStatus_t Se05x_API_DigestFinal(pSe05xSession_t session_ctx,
+    SE05x_CryptoObjectID_t cryptoObjectID,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *cmacValue,
+    size_t *pcmacValueLen);
+
+/** Se05x_API_DigestOneShot
+ *
+ * Performs a hash operation in one shot (without context).
+ *
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +-------+------------+-------------------------------------------+
+ * | Field | Value      | Description                               |
+ * +=======+============+===========================================+
+ * | CLA   | 0x80       |                                           |
+ * +-------+------------+-------------------------------------------+
+ * | INS   | INS_CRYPTO | See :cpp:type:`SE05x_INS_t`               |
+ * +-------+------------+-------------------------------------------+
+ * | P1    | P1_DEFAULT | See :cpp:type:`SE05x_P1_t`                |
+ * +-------+------------+-------------------------------------------+
+ * | P2    | P2_ONESHOT | See :cpp:type:`SE05x_P2_t`                |
+ * +-------+------------+-------------------------------------------+
+ * | Lc    | #(Payload) |                                           |
+ * +-------+------------+-------------------------------------------+
+ * |       | TLV[TAG_1] | 1-byte DigestMode (except DIGEST_NO_HASH) |
+ * +-------+------------+-------------------------------------------+
+ * |       | TLV[TAG_2] | Data to hash.                             |
+ * +-------+------------+-------------------------------------------+
+ * | Le    | 0x00       | TLV expecting hash value                  |
+ * +-------+------------+-------------------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * @rst
+ * +------------+-------------+
+ * | Value      | Description |
+ * +============+=============+
+ * | TLV[TAG_1] | Hash value. |
+ * +------------+-------------+
+ * @endrst
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+-----------------------------------+
+ * | SW          | Description                       |
+ * +=============+===================================+
+ * | SW_NO_ERROR | The hash is created successfully. |
+ * +-------------+-----------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] digestMode digestMode [1:kSE05x_TAG_1]
+ * @param[in] inputData inputData [2:kSE05x_TAG_2]
+ * @param[in] inputDataLen Length of inputData
+ * @param[out] hashValue  [0:kSE05x_TAG_1]
+ * @param[in,out] phashValueLen Length for hashValue
+ */
+smStatus_t Se05x_API_DigestOneShot(pSe05xSession_t session_ctx,
+    uint8_t digestMode,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *hashValue,
+    size_t *phashValueLen);
+
+
+/** Se05x_API_MACOneShot_G
+ *
+ * Generate.  See @ref Se05x_API_MACOneShot_V for Verfiication.
+ *
+ * Performs a MAC operation in one shot (without keeping state).
+ *
+ * The 4-byte identifier of the key must refer to an AESKey, DESKey or HMACKey.
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +---------+------------------------+---------------------------------------------+
+ * | Field   | Value                  | Description                                 |
+ * +=========+========================+=============================================+
+ * | CLA     | 0x80                   |                                             |
+ * +---------+------------------------+---------------------------------------------+
+ * | INS     | INS_CRYPTO             | :cpp:type:`SE05x_INS_t`                     |
+ * +---------+------------------------+---------------------------------------------+
+ * | P1      | P1_MAC                 | See :cpp:type:`SE05x_P1_t`                  |
+ * +---------+------------------------+---------------------------------------------+
+ * | P2      | P2_GENERATE_ONESHOT or | See :cpp:type:`SE05x_P2_t`                  |
+ * |         | P2_VALIDATE_ONESHOT    |                                             |
+ * +---------+------------------------+---------------------------------------------+
+ * | Lc      | #(Payload)             |                                             |
+ * +---------+------------------------+---------------------------------------------+
+ * | Payload | TLV[TAG_1]             | 4-byte identifier of the key object.        |
+ * +---------+------------------------+---------------------------------------------+
+ * |         | TLV[TAG_2]             | 1-byte :cpp:type:`MACAlgoRef`               |
+ * +---------+------------------------+---------------------------------------------+
+ * |         | TLV[TAG_3]             | Byte array containing data to be taken as   |
+ * |         |                        | input to MAC.                               |
+ * +---------+------------------------+---------------------------------------------+
+ * |         | TLV[TAG_5]             | MAC to verify (when P2=P2_VALIDATE_ONESHOT) |
+ * +---------+------------------------+---------------------------------------------+
+ * | Le      | 0x00                   | Expecting MAC or Result.                    |
+ * +---------+------------------------+---------------------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * @rst
+ * +------------+---------------------------------------+
+ * | Value      | Description                           |
+ * +============+=======================================+
+ * | TLV[TAG_1] | MAC value (P2=P2_GENERATE_ONESHOT) or |
+ * |            | :cpp:type:`SE05x_Result_t` (when      |
+ * |            | p2=P2_VALIDATE_ONESHOT).              |
+ * +------------+---------------------------------------+
+ * @endrst
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+--------------------------------------+
+ * | SW          | Description                          |
+ * +=============+======================================+
+ * | SW_NO_ERROR | The command is handled successfully. |
+ * +-------------+--------------------------------------+
+ * @endrst
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] objectID objectID [1:kSE05x_TAG_1]
+ * @param[in] macOperation macOperation [2:kSE05x_TAG_2]
+ * @param[in] inputData inputData [3:kSE05x_TAG_3]
+ * @param[in] inputDataLen Length of inputData
+ * @param[out] macValue  [0:kSE05x_TAG_1]
+ * @param[in,out] pmacValueLen Length for macValue
+ */
+smStatus_t Se05x_API_MACOneShot_G(pSe05xSession_t session_ctx,
+    uint32_t objectID,
+    uint8_t macOperation,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *macValue,
+    size_t *pmacValueLen);
+
+
+/** Se05x_API_CreateCryptoObject
+ *
+ * Creates a Crypto Object on the SE05X . Once the Crypto Object is created, it
+ * is bound to the user who created the Crypto Object.
+ *
+ * A CryptoObject is a 2-byte value consisting of a CryptoContext in MSB and one
+ * of the following in LSB:
+ *
+ *   * DigestMode in case CryptoContext = CC_DIGEST
+ *
+ *   * CipherMode in case CryptoContext = CC_CIPHER
+ *
+ *   * MACAlgo in case CryptoContext = CC_SIGNATURE
+ *
+ *   * AEADMode in case CryptoContext = CC_AEAD
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +---------+---------------+-------------------------------------------+
+ * | Field   | Value         | Description                               |
+ * +=========+===============+===========================================+
+ * | CLA     | 0x80          |                                           |
+ * +---------+---------------+-------------------------------------------+
+ * | INS     | INS_WRITE     | See :cpp:type:`SE05x_INS_t`               |
+ * +---------+---------------+-------------------------------------------+
+ * | P1      | P1_CRYPTO_OBJ | See :cpp:type:`SE05x_P1_t`                |
+ * +---------+---------------+-------------------------------------------+
+ * | P2      | P2_DEFAULT    | See :cpp:type:`SE05x_P2_t`                |
+ * +---------+---------------+-------------------------------------------+
+ * | Lc      | #(Payload)    | Payload length                            |
+ * +---------+---------------+-------------------------------------------+
+ * | Payload | TLV[TAG_1]    | 2-byte Crypto Object identifier           |
+ * +---------+---------------+-------------------------------------------+
+ * |         | TLV[TAG_2]    | 1-byte :cpp:type:`SE05x_CryptoObject_t`   |
+ * +---------+---------------+-------------------------------------------+
+ * |         | TLV[TAG_3]    | 1-byte Crypto Object subtype, either from |
+ * |         |               | :cpp:type:`DigestModeRef`, CipherMode,    |
+ * |         |               | MACAlgo (depending on TAG_2) or AEADMode. |
+ * +---------+---------------+-------------------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * NA
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+----------------------------------------------+
+ * | SW          | Description                                  |
+ * +=============+==============================================+
+ * | SW_NO_ERROR | The file is created or updated successfully. |
+ * +-------------+----------------------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] cryptoObjectID cryptoObjectID [1:kSE05x_TAG_1]
+ * @param[in] cryptoContext cryptoContext [2:kSE05x_TAG_2]
+ *
+ * @param[in] subtype 1-byte Crypto Object subtype, either from
+ *            DigestMode, CipherMode or MACAlgo (depending on
+ *            TAG_2). [3:kSE05x_TAG_3]
+ */
+smStatus_t Se05x_API_CreateCryptoObject(pSe05xSession_t session_ctx,
+    SE05x_CryptoObjectID_t cryptoObjectID,
+    SE05x_CryptoContext_t cryptoContext,
+    SE05x_CryptoModeSubType_t subtype);
+
+/** Se05x_API_DeleteCryptoObject
+ *
+ * Deletes a Crypto Object on the SE05X .
+ *
+ * Note: when a Crypto Object is deleted, the memory (as mentioned in ) is de-
+ * allocated, but the transient memory is only freed when de-selecting the
+ * applet!
+ *
+ * # Command to Applet
+ *
+ * @rst
+ * +---------+------------------+---------------------------------+
+ * | Field   | Value            | Description                     |
+ * +=========+==================+=================================+
+ * | CLA     | 0x80             |                                 |
+ * +---------+------------------+---------------------------------+
+ * | INS     | INS_MGMT         | See :cpp:type:`SE05x_INS_t`     |
+ * +---------+------------------+---------------------------------+
+ * | P1      | P1_CRYPTO_OBJ    | See :cpp:type:`SE05x_P1_t`      |
+ * +---------+------------------+---------------------------------+
+ * | P2      | P2_DELETE_OBJECT | See :cpp:type:`SE05x_P2_t`      |
+ * +---------+------------------+---------------------------------+
+ * | Lc      | #(Payload)       | Payload length                  |
+ * +---------+------------------+---------------------------------+
+ * | Payload | TLV[TAG_1]       | 2-byte Crypto Object identifier |
+ * +---------+------------------+---------------------------------+
+ * @endrst
+ *
+ * # R-APDU Body
+ *
+ * NA
+ *
+ * # R-APDU Trailer
+ *
+ * @rst
+ * +-------------+----------------------------------------------+
+ * | SW          | Description                                  |
+ * +=============+==============================================+
+ * | SW_NO_ERROR | The file is created or updated successfully. |
+ * +-------------+----------------------------------------------+
+ * @endrst
+ *
+ *
+ *
+ * @param[in] session_ctx Session Context [0:kSE05x_pSession]
+ * @param[in] cryptoObjectID cryptoObjectID [1:kSE05x_TAG_1]
+ */
+smStatus_t Se05x_API_DeleteCryptoObject(pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID);
+
 /** Se05x_API_CreateSession
  *
  * Creates a session on SE05X .
@@ -950,6 +1432,33 @@ smStatus_t Se05x_API_ReadIDList(pSe05xSession_t session_ctx,
     uint8_t *pmore,
     uint8_t *idlist,
     size_t *pidlistLen);
+
+    /** Se05x_API_DeleteAll_Iterative
+ *
+ * Go through each object and delete it individually.
+ *
+ * This API does not use the Applet API @ref Se05x_API_DeleteAll. It
+ * does not delete ALL objects and purposefully skips few objects.
+ *
+ * Instead, this API uses @ref Se05x_API_ReadIDList and @ref
+ * Se05x_API_ReadCryptoObjectList to first fetch list of objects to host, and
+ * **selectitvely** deletes.
+ *
+ * For e.g. It does not kill objects from:
+ *  - The range SE05X_OBJID_SE05X_APPLET_RES_START to
+ *    SE05X_OBJID_SE05X_APPLET_RES_END.  This range is used by applet.
+ *  - The range EX_SSS_OBJID_DEMO_AUTH_START to EX_SSS_OBJID_DEMO_AUTH_END,
+ *    which is used by middleware DEMOS for authentication.
+ *  - And others.
+ *
+ * Kindly see the Implementation of is API Se05x_API_DeleteAll_Iterative to see
+ * the list of ranges that are skipped.
+ *
+ * @param[in]  session_ctx  Session Context
+ *
+ * @return     The status of API.
+ */
+smStatus_t Se05x_API_DeleteAll_Iterative(pSe05xSession_t session_ctx);
 
 /** Se05x_API_ReadSize
  *

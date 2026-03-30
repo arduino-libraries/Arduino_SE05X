@@ -729,6 +729,318 @@ cleanup:
     return retStatus;
 }
 
+/* API added from PlugNTrust full library*/
+
+smStatus_t Se05x_API_GetRandom(pSe05xSession_t session_ctx, uint16_t size, uint8_t *randomData, size_t *prandomDataLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_MGMT, kSE05x_P1_DEFAULT, kSE05x_P2_RANDOM}};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = NULL;
+    int tlvRet                             = 0;
+    uint8_t *pRspbuf                       = NULL;
+    size_t rspbufLen                       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_GetRandom [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+    pRspbuf   = &session_ctx->apdu_buffer[0];
+    rspbufLen = sizeof(session_ctx->apdu_buffer);
+    
+    tlvRet = TLVSET_U16("size", &pCmdbuf, &cmdbufLen, kSE05x_TAG_1, size);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTxRx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, pRspbuf, &rspbufLen, 0);
+    if (retStatus == SM_OK) {
+        retStatus       = SM_NOT_OK;
+        size_t rspIndex = 0;
+        tlvRet          = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kSE05x_TAG_1, randomData, prandomDataLen); /*  */
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+
+cleanup:
+    return retStatus;
+}
+
+
+smStatus_t Se05x_API_DigestInit(pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_DEFAULT, kSE05x_P2_INIT}};
+    size_t cmdbufLen     = 0;
+    uint8_t *pCmdbuf     = NULL;
+    int tlvRet           = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_DigestInit [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+
+    tlvRet = TLVSET_U16("cryptoObjectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, cryptoObjectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, 0);
+
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Se05x_API_DigestUpdate(
+    pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID, const uint8_t *inputData, size_t inputDataLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_DEFAULT, kSE05x_P2_UPDATE}};
+    size_t cmdbufLen = 0;
+    uint8_t *pCmdbuf = NULL;
+    int tlvRet       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_DigestUpdate [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+
+    tlvRet = TLVSET_U16("cryptoObjectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, cryptoObjectID);
+    if (0 != tlvRet) {
+        SMLOG_D("cryptoObjectID err \n");
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kSE05x_TAG_3, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, 0);
+
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Se05x_API_DigestFinal(pSe05xSession_t session_ctx,
+    SE05x_CryptoObjectID_t cryptoObjectID,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *cmacValue,
+    size_t *pcmacValueLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_DEFAULT, kSE05x_P2_FINAL}};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = NULL;
+    int tlvRet                             = 0;
+    uint8_t *pRspbuf                       = NULL;
+    size_t rspbufLen                       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_DigestFinal [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+    pRspbuf   = &session_ctx->apdu_buffer[0];
+    rspbufLen = sizeof(session_ctx->apdu_buffer);
+
+    tlvRet = TLVSET_U16("cryptoObjectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, cryptoObjectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8buf("inputData", &pCmdbuf, &cmdbufLen, kSE05x_TAG_3, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTxRx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, pRspbuf, &rspbufLen, 0);
+    if (retStatus == SM_OK) {
+        retStatus       = SM_NOT_OK;
+        size_t rspIndex = 0;
+        tlvRet          = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kSE05x_TAG_1, cmacValue, pcmacValueLen); /*  */
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Se05x_API_DigestOneShot(pSe05xSession_t session_ctx,
+    uint8_t digestMode,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *hashValue,
+    size_t *phashValueLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_DEFAULT, kSE05x_P2_ONESHOT}};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = NULL;
+    int tlvRet                             = 0;
+    uint8_t *pRspbuf                       = NULL;
+    size_t rspbufLen                       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_DigestOneShot [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+    pRspbuf   = &session_ctx->apdu_buffer[0];
+    rspbufLen = sizeof(session_ctx->apdu_buffer);
+
+    tlvRet = TLVSET_U8("digestMode", &pCmdbuf, &cmdbufLen, kSE05x_TAG_1, digestMode);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTxRx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, pRspbuf, &rspbufLen, 0);
+    if (retStatus == SM_OK) {
+        retStatus       = SM_NOT_OK;
+        size_t rspIndex = 0;
+        tlvRet          = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kSE05x_TAG_1, hashValue, phashValueLen); /*  */
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+
+cleanup:
+    return retStatus;
+}
+
+
+smStatus_t Se05x_API_MACOneShot_G(pSe05xSession_t session_ctx,
+    uint32_t objectID,
+    uint8_t macOperation,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *macValue,
+    size_t *pmacValueLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_MAC, kSE05x_P2_GENERATE_ONESHOT}};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = NULL;
+    int tlvRet                             = 0;
+    uint8_t *pRspbuf                       = NULL;
+    size_t rspbufLen                       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_MACOneShot_G [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+    pRspbuf   = &session_ctx->apdu_buffer[0];
+    rspbufLen = sizeof(session_ctx->apdu_buffer);
+
+    tlvRet = TLVSET_U32("objectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_1, objectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_U8("macOperation", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, macOperation);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kSE05x_TAG_3, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTxRx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, pRspbuf, &rspbufLen, 0);
+
+    if (retStatus == SM_OK) {
+        retStatus = SM_NOT_OK;
+        size_t rspIndex = 0;
+        tlvRet    = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kSE05x_TAG_1, macValue, pmacValueLen);
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+
+cleanup:
+    return retStatus;
+}
+
+
+smStatus_t Se05x_API_CreateCryptoObject(pSe05xSession_t session_ctx,
+    SE05x_CryptoObjectID_t cryptoObjectID,
+    SE05x_CryptoContext_t cryptoContext,
+    SE05x_CryptoModeSubType_t subtype)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_WRITE, kSE05x_P1_CRYPTO_OBJ, kSE05x_P2_DEFAULT}};
+    size_t cmdbufLen = 0;
+    uint8_t *pCmdbuf = NULL;
+    int tlvRet       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_CreateCryptoObject [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+
+    tlvRet = TLVSET_U16("cryptoObjectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_1, cryptoObjectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_U8("cryptoContext", &pCmdbuf, &cmdbufLen, kSE05x_TAG_2, cryptoContext);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_CryptoModeSubType(
+        "1-byte Crypto Object subtype, either from DigestMode, CipherMode or MACAlgo (depending on TAG_2).",
+        &pCmdbuf,
+        &cmdbufLen,
+        kSE05x_TAG_3,
+        subtype);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, 0);
+
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Se05x_API_DeleteCryptoObject(pSe05xSession_t session_ctx, SE05x_CryptoObjectID_t cryptoObjectID)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kSE05x_CLA, kSE05x_INS_MGMT, kSE05x_P1_CRYPTO_OBJ, kSE05x_P2_DELETE_OBJECT}};
+    size_t cmdbufLen = 0;
+    uint8_t *pCmdbuf = NULL;
+    int tlvRet       = 0;
+
+    ENSURE_OR_GO_CLEANUP(session_ctx != NULL);
+
+    SMLOG_D("APDU - Se05x_API_DeleteCryptoObject [] \n");
+
+    pCmdbuf = &session_ctx->apdu_buffer[0];
+
+    tlvRet = TLVSET_U16("cryptoObjectID", &pCmdbuf, &cmdbufLen, kSE05x_TAG_1, cryptoObjectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTx(session_ctx, &hdr, session_ctx->apdu_buffer, cmdbufLen, 0);
+
+cleanup:
+    return retStatus;
+}
+
 smStatus_t Se05x_API_CreateSession(
     pSe05xSession_t session_ctx, uint32_t authObjectID, uint8_t *sessionId, size_t *psessionIdLen)
 {
@@ -1204,5 +1516,63 @@ smStatus_t Se05x_API_PBKDF2_extended(pSe05xSession_t session_ctx,
     }
 
 cleanup:
+    return retStatus;
+}
+
+smStatus_t Se05x_API_DeleteAll_Iterative(pSe05xSession_t session_ctx)
+{
+    uint8_t pmore = kSE05x_MoreIndicator_NA;
+    uint8_t list[1024];
+    size_t listlen = sizeof(list);
+    size_t i;
+    smStatus_t retStatus  = SM_NOT_OK;
+    uint16_t outputOffset = 0;
+    do {
+        retStatus = Se05x_API_ReadIDList(session_ctx, outputOffset, 0xFF, &pmore, list, &listlen);
+        if (retStatus != SM_OK) {
+            return retStatus;
+        }
+        outputOffset = (uint16_t)listlen;
+        for (i = 0; i < listlen; i += 4) {
+            uint32_t id = 0 | (list[i + 0] << (3 * 8)) | (list[i + 1] << (2 * 8)) | (list[i + 2] << (1 * 8)) |
+                          (list[i + 3] << (0 * 8));
+            if (SE05X_OBJID_SE05X_APPLET_RES_START == SE05X_OBJID_SE05X_APPLET_RES_MASK(id)) {
+                SMLOG_D("Not erasing ObjId=0x%08X (Reserved)", id);
+                /* In Reserved space */
+            }
+            else if (EX_SSS_OBJID_DEMO_AUTH_START == EX_SSS_OBJID_DEMO_AUTH_MASK(id)) {
+                SMLOG_D("Not erasing ObjId=0x%08X (Demo Auth)", id);
+                /* Not reasing default authentication object */
+            }
+            else if (EX_SSS_OBJID_IOT_HUB_A_START == EX_SSS_OBJID_IOT_HUB_A_MASK(id)) {
+                SMLOG_D("Not erasing ObjId=0x%08X (IoT Hub)", id);
+                /* Not reasing IoT Hub object */
+            }
+            else if (!SE05X_OBJID_TP_MASK(id) && id) {
+                SMLOG_D("Not erasing Trust Provisioned objects");
+            }
+            else {
+                retStatus = Se05x_API_DeleteSecureObject(session_ctx, id);
+                if (retStatus != SM_OK) {
+                    SMLOG_W("Error in erasing ObjId=0x%08X (Others)", id);
+                }
+            }
+        }
+    } while (pmore == kSE05x_MoreIndicator_MORE);
+#if SSSFTR_SE05X_CREATE_DELETE_CRYPTOOBJ
+    retStatus = Se05x_API_ReadCryptoObjectList(session_ctx, list, &listlen);
+    if (retStatus != SM_OK) {
+        goto cleanup;
+    }
+    for (i = 0; i < listlen; i += 4) {
+        uint16_t cryptoObjectId                = list[i + 1] | (list[i + 0] << 8);
+        SE05x_CryptoObjectID_t ecryptoObjectId = (SE05x_CryptoObjectID_t)cryptoObjectId;
+        retStatus                              = Se05x_API_DeleteCryptoObject(session_ctx, ecryptoObjectId);
+        if (retStatus != SM_OK) {
+            LOG_W("Error in erasing CryptoObject=%04X", cryptoObjectId);
+        }
+    }
+cleanup:
+#endif
     return retStatus;
 }

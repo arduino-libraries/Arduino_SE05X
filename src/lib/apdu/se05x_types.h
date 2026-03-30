@@ -40,6 +40,10 @@
 #define EX_SSS_OBJID_IOT_HUB_A_START 0xF0000000u
 #define EX_SSS_OBJID_IOT_HUB_A_MASK(X) (0xF0000000u & (X))
 
+#define EX_SSS_OBJID_DEMO_AUTH_START 0x7DA00000u
+#define EX_SSS_OBJID_DEMO_AUTH_MASK(X) (0xFFFF0000u & (X))
+#define SE05X_OBJID_TP_MASK(X) (0xFFFFFFFC & (X))
+
 /** When we want to read with attestation */
 #define kSE05x_INS_READ_With_Attestation (kSE05x_INS_READ | kSE05x_INS_ATTEST)
 
@@ -193,6 +197,7 @@ typedef enum
     kSE05x_P1_SIGNATURE = 0x0C,
     kSE05x_P1_MAC       = 0x0D,
     kSE05x_P1_CIPHER    = 0x0E,
+    kSE05x_P1_CRYPTO_OBJ = 0x10,
 } SE05x_P1_t;
 
 /** Values for P2 in ISO7816 APDU */
@@ -205,6 +210,11 @@ typedef enum
     kSE05x_P2_SIZE            = 0x07,
     kSE05x_P2_SIGN            = 0x09,
     kSE05x_P2_VERIFY          = 0x0A,
+    kSE05x_P2_INIT            = 0x0B,
+    kSE05x_P2_UPDATE          = 0x0C,
+    kSE05x_P2_FINAL           = 0x0D,
+    kSE05x_P2_ONESHOT         = 0x0E,
+    kSE05x_P2_DH              = 0x0F,
     kSE05x_P2_SESSION_CREATE  = 0x1B,
     kSE05x_P2_SESSION_CLOSE   = 0x1C,
     kSE05x_P2_VERSION         = 0x20,
@@ -214,13 +224,14 @@ typedef enum
     kSE05x_P2_DELETE_OBJECT   = 0x28,
     kSE05x_P2_SESSION_UserID  = 0x2C,
     kSE05x_P2_PBKDF           = 0x2E,
-    kSE05x_P2_DH              = 0x0F,
+    kSE05x_P2_ID              = 0x36,
     kSE05x_P2_ENCRYPT_ONESHOT = 0x37,
     kSE05x_P2_DECRYPT_ONESHOT = 0x38,
-    kSE05x_P2_SCP             = 0x52,
-    kSE05x_P2_ONESHOT         = 0x0E,
-    kSE05x_P2_ID              = 0x36,
     kSE05x_P2_PARAM           = 0x40,
+    kSE05x_P2_GENERATE_ONESHOT = 0x45,
+    kSE05x_P2_VALIDATE_ONESHOT = 0x46,
+    kSE05x_P2_RANDOM          = 0x49,
+    kSE05x_P2_SCP             = 0x52,
 } SE05x_P2_t;
 
 /** ECC Curve Identifiers */
@@ -525,5 +536,118 @@ typedef enum
     kSE05x_MACAlgo_CMAC_128    = 0x31,
     kSE05x_MACAlgo_DES_CMAC8   = 0x7A,
 } SE05x_MACAlgo_t;
+
+
+/** Crypto object identifiers Added for handling digests */
+typedef enum
+{
+    /** Invalid */
+    kSE05x_CryptoObject_NA = 0,
+    kSE05x_CryptoObject_DIGEST_SHA,
+    kSE05x_CryptoObject_DIGEST_SHA224,
+    kSE05x_CryptoObject_DIGEST_SHA256,
+    kSE05x_CryptoObject_DIGEST_SHA384,
+    kSE05x_CryptoObject_DIGEST_SHA512,
+    kSE05x_CryptoObject_DES_CBC_NOPAD,
+    kSE05x_CryptoObject_DES_CBC_ISO9797_M1,
+    kSE05x_CryptoObject_DES_CBC_ISO9797_M2,
+    kSE05x_CryptoObject_DES_CBC_PKCS5,
+    kSE05x_CryptoObject_DES_ECB_NOPAD,
+    kSE05x_CryptoObject_DES_ECB_ISO9797_M1,
+    kSE05x_CryptoObject_DES_ECB_ISO9797_M2,
+    kSE05x_CryptoObject_DES_ECB_PKCS5,
+    kSE05x_CryptoObject_AES_ECB_NOPAD,
+    kSE05x_CryptoObject_AES_CBC_NOPAD,
+    kSE05x_CryptoObject_AES_CBC_ISO9797_M1,
+    kSE05x_CryptoObject_AES_CBC_ISO9797_M2,
+    kSE05x_CryptoObject_AES_CBC_PKCS5,
+    kSE05x_CryptoObject_AES_CTR,
+    kSE05x_CryptoObject_AES_CTR_INT_IV,
+    kSE05x_CryptoObject_HMAC_SHA1,
+    kSE05x_CryptoObject_HMAC_SHA256,
+    kSE05x_CryptoObject_HMAC_SHA384,
+    kSE05x_CryptoObject_HMAC_SHA512,
+    kSE05x_CryptoObject_CMAC_128,
+    kSE05x_CryptoObject_AES_GCM,
+    kSE05x_CryptoObject_AES_GCM_INT_IV,
+    kSE05x_CryptoObject_AES_CCM,
+    kSE05x_CryptoObject_AES_CCM_INT_IV,
+    kSE05x_CryptoObject_PAKE_TYPE_A,
+    kSE05x_CryptoObject_PAKE_TYPE_B,
+    kSE05x_CryptoObject_End,
+} SE05x_CryptoObjectID_t;
+
+/** Hashing/Digest algorithms */
+typedef enum
+{
+    /** Invalid */
+    kSE05x_DigestMode_NA = 0,
+    kSE05x_DigestMode_NO_HASH = 0x00,
+    kSE05x_DigestMode_SHA = 0x01,
+    /** Not supported */
+    kSE05x_DigestMode_SHA224 = 0x07,
+    kSE05x_DigestMode_SHA256 = 0x04,
+    kSE05x_DigestMode_SHA384 = 0x05,
+    kSE05x_DigestMode_SHA512 = 0x06,
+} SE05x_DigestMode_t;
+
+/** AEAD Algorithms */
+typedef enum
+{
+    /** Invalid */
+    kSE05x_AeadAlgo_NA = 0,
+    kSE05x_AeadGCMAlgo = 0xB0,
+    kSE05x_AeadGCM_IVAlgo = 0xF3,
+    kSE05x_AeadCCMAlgo = 0xF4,
+} SE05x_AeadAlgo_t;
+
+/** PAKE Mode */
+typedef enum
+{
+    /** Invalid */
+    kSE05x_SPAKE2PLUS_NA = 0,
+    kSE05x_SPAKE2PLUS_P256_SHA256_HKDF_HMAC = 0x01,
+    kSE05x_SPAKE2PLUS_P256_SHA512_HKDF_HMAC = 0x02,
+    kSE05x_SPAKE2PLUS_P384_SHA256_HKDF_HMAC = 0x03,
+    kSE05x_SPAKE2PLUS_P384_SHA512_HKDF_HMAC = 0x04,
+    kSE05x_SPAKE2PLUS_P521_SHA512_HKDF_HMAC = 0x05,
+    //kSE05x_SPAKE2PLUS_ED25519_SHA256_HKDF_HMAC = 0x06, //Not supported
+    //kSE05x_SPAKE2PLUS_ED448_SHA512_HKDF_HMAC = 0x07, //Not supported
+    kSE05x_SPAKE2PLUS_P256_SHA256_HKDF_CMAC = 0x08,
+    kSE05x_SPAKE2PLUS_P256_SHA512_HKDF_CMAC = 0x09,
+} SE05x_PAKEMode_t;
+
+/** Cryptographic context for operation */
+typedef enum
+{
+    /** Invalid */
+    kSE05x_CryptoContext_NA = 0,
+    /** For DigestInit/DigestUpdate/DigestFinal */
+    kSE05x_CryptoContext_DIGEST = 0x01,
+    /** For CipherInit/CipherUpdate/CipherFinal */
+    kSE05x_CryptoContext_CIPHER = 0x02,
+    /** For MACInit/MACUpdate/MACFinal */
+    kSE05x_CryptoContext_SIGNATURE = 0x03,
+    /** For AEADInit/AEADUpdate/AEADFinal */
+    kSE05x_CryptoContext_AEAD = 0x04,
+    /** For PAKE */
+    kSE05x_CryptoContext_PAKE = 0x05,
+} SE05x_CryptoContext_t;
+
+/** Crypto module subtype */
+typedef union {
+    /** In case it's digest */
+    SE05x_DigestMode_t digest;
+    /** In case it's cipher */
+    SE05x_CipherMode_t cipher;
+    /** In case it's mac */
+    SE05x_MACAlgo_t mac;
+    /** In case it's aead */
+    SE05x_AeadAlgo_t aead;
+    /** In case it's pake */
+    SE05x_PAKEMode_t pakeMode;
+    /** Accessing 8 bit value for APDUs */
+    uint8_t union_8bit;
+} SE05x_CryptoModeSubType_t;
 
 #endif //#ifndef SE05X_TYPES_H_INC
