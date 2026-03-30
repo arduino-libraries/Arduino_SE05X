@@ -105,4 +105,7 @@ smStatus_t DoAPDUTxRx(pSe05xSession_t session_ctx,
 #define TLVSET_ECCurveParam TLVSET_U8
 #define TLVSET_AttestationAlgo TLVSET_U8
 
+#define TLVSET_CryptoModeSubType(DESCRIPTION, PBUF, PBUFLEN, TAG, VALUE) \
+    TLVSET_U8(DESCRIPTION, PBUF, PBUFLEN, TAG, ((VALUE).union_8bit))
+
 #endif // #ifndef SE05X_TLV_H_INC
