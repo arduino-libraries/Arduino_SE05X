@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "lib/platform/arduino/sm_port.h"
 
 /* ********************** Constants ********************** */
 
