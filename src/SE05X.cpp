@@ -74,6 +74,18 @@
 
 #define SE05X_MAX_CHUNK_SIZE             100
 
+#if defined(SE05X_ENABLE_GPIO) && defined(ARDUINO_ARCH_ZEPHYR)
+#define SE050_ENA_PIN SE05X_ENABLE_GPIO
+#elif defined(ARDUINO_PORTENTA_C33) && defined(ARDUINO_ARCH_RENESAS)
+#define SE050_ENA_PIN 98
+#elif defined(ARDUINO_PORTENTA_H7_M7) && defined(ARDUINO_ARCH_MBED)
+#define SE050_ENA_PIN PI_12
+#elif defined(ARDUINO_NICLA_VISION) && defined(ARDUINO_ARCH_MBED)
+#define SE050_ENA_PIN PG_0
+#else
+#warning "No enable pin is defined for se05x"
+#endif
+
 static const byte ecc_der_header_nist256[SE05X_EC_KEY_DER_HEADER_LENGTH] =
 {
     0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86,
@@ -89,8 +101,10 @@ int SE05XClass::begin()
 {
     smStatus_t status;
 
+#ifdef SE050_ENA_PIN
     pinMode(SE050_ENA_PIN, OUTPUT);
     digitalWrite(SE050_ENA_PIN, HIGH);
+#endif // SE050_ENA_PIN
 
     memset(&_se05x_session, 0, sizeof(_se05x_session));
 

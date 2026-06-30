@@ -111,18 +111,6 @@
     #define SMLOG_MAU8_D(MSG, BUF, LEN)
 #endif
 
-#if defined(SE05X_ENABLE_GPIO) && defined(ARDUINO_ARCH_ZEPHYR)
-#define SE050_ENA_PIN SE05X_ENABLE_GPIO
-#elif defined(ARDUINO_PORTENTA_C33) && defined(ARDUINO_ARCH_RENESAS)
-#define SE050_ENA_PIN 98
-#elif defined(ARDUINO_PORTENTA_H7_M7) && defined(ARDUINO_ARCH_MBED)
-#define SE050_ENA_PIN PI_12
-#elif defined(ARDUINO_NICLA_VISION) && defined(ARDUINO_ARCH_MBED)
-#define SE050_ENA_PIN PG_0
-#else
-#warning "No enable pin is defined for se05x"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
