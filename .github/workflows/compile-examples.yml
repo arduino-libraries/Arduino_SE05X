@@ -42,6 +42,9 @@ jobs:
           - fqbn: arduino:mbed_portenta:envie_m7
             type: mbed_portenta
             artifact-name-suffix: arduino-mbed_portenta-envie_m7
+          - fqbn: arduino:mbed_nicla:nicla_vision
+            type: mbed_nicla
+            artifact-name-suffix: arduino-mbed_nicla-nicla_vision
           - fqbn: arduino:renesas_portenta:portenta_c33
             type: renesas_portenta
             artifact-name-suffix: arduino-renesas_portenta-portenta_c33
